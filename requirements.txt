@@ -5,3 +5,4 @@ pyjanitor
 scikit-learn
 requests
 BeautifulSoup
+seaborn
