@@ -1,0 +1,169 @@
+---
+title: "Temp"
+output: html_document
+date: "2024-11-07"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(lubridate)
+library(RSelenium)
+library(rvest)
+library(dplyr)
+
+start_date <- ymd("2019-10-27")
+end_date <- ymd("2024-11-24")
+
+all_dates <- seq(start_date, end_date, by = "day")
+all_dates <- as.data.frame(all_dates[month(all_dates) == 10 & day(all_dates) >= 27 | month(all_dates) == 11 | month(all_dates) == 12 & day(all_dates) <= 16])
+
+data <- all_dates
+```
+
+
+```{r}
+safe_navigate <- function(driver, url, retries = 3) {
+  for (i in 1:retries) {
+    tryCatch({
+      driver$navigate(url)
+      return(TRUE) # If successful, exit function
+    }, error = function(e) {
+      message(paste("Attempt", i, "failed. Retrying..."))
+      Sys.sleep(5)  # Wait before retrying
+    })
+  }
+  return(FALSE) # Return FALSE if all retries fail
+}
+
+
+
+```
+
+```{r}
+# Load necessary libraries
+library(RSelenium)
+library(rvest)
+library(dplyr)
+
+# Define base URL template and locations
+base_url_template <- "https://www.wunderground.com/history/daily/us/{location_code}/date/"
+#locations <- list("mi/detroit/KDET", "id/boise/KBOI")   # Add more locations if needed
+#locations <- list("ak/anchorage/PAMR", "il/chicago/KMDW", "co/broomfield/KBJC", "hi/honolulu/PHNL", "tx/houston/KHOU")
+#locations <- list("fl/miami/KMIA", "mn/fort-snelling/KMSP", "ok/oklahoma-city/KOKC", "tn/nashville/KBNA", "ny/new-york-city/KLGA")
+#locations <- list("az/phoenix/KPHX", "me/portland/KPWM", "or/portland/KPDX", "ut/salt-lake-city/KSLC")
+#locations <- list("ca/san-diego/KSAN", "ca/san-bruno/KSFO", "wa/seattle/KBFI", "va/arlington/KDCA")
+
+locations <- list("ca/san-diego/KSAN", "ca/san-bruno/KSFO", "wa/seatac/KSEA", "va/arlington/KDCA", "az/phoenix/KPHX", "me/portland/KPWM", "or/portland/KPDX", "ut/salt-lake-city/KSLC", "fl/miami/KMIA", "mn/fort-snelling/KMSP", "ok/oklahoma-city/KOKC", "tn/nashville/KBNA", "ak/anchorage/PANC", "il/chicago/o'hare-international-airport/KORD", "co/colorado-springs/KCOS", "hi/honolulu/PHNL", "tx/houston/KIAH", "mi/romulus/KDTW", "id/boise/KBOI", "ny/new-york-city/KJFK")
+
+# Start RSelenium
+rD <- rsDriver(browser = "firefox", port = 4545L, verbose = FALSE)
+remDr <- rD$client
+
+# List to store data for all locations and dates
+weather_data <- list()
+
+# Predefined column names based on expected first column content
+column_names <- c("High Temp", "Low Temp", "Day Average Temp", "Precipitation", "Dew Point", "High", "Low", "Average", "Max Wind Speed", "Visibiilty",  "Sea Level Pressure", "Actual Time")
+
+# Loop over each location
+for (location in locations) {
+  # Adjust base URL for each location
+  base_url <- gsub("{location_code}", location, base_url_template, fixed = TRUE)
+
+  # Loop over each date
+  for (i in 1:nrow(data)) {
+    date_str <- format(data[i,], "%Y-%m-%d")
+    url <- paste0(base_url, date_str)
+
+    # Print progress
+    print(paste("Scraping:", location, "Date:", date_str))
+
+    # Navigate to the URL
+    # Use safe_navigate to handle navigation
+    success <- safe_navigate(remDr, url)
+    if (!success) {
+      message(paste("Failed to load URL after retries:", url))
+      next  # Skip to the next iteration
+      }
+
+    
+    # Allow time for the page to load (increase if needed)
+    Sys.sleep(3)
+    
+    # Get the page source after JavaScript execution
+    page_source <- remDr$getPageSource()[[1]]
+    page <- read_html(page_source)
+    
+    # Define the XPath for the table
+    table_xpath <- "/html/body/app-root/app-history/one-column-layout/wu-header/sidenav/mat-sidenav-container/mat-sidenav-content/div[2]/section/div[2]/div[1]/div[3]/div[1]/div/lib-city-history-summary/div/div[2]/table"
+    
+    # Extract the table node
+    table_node <- page %>% html_node(xpath = table_xpath)
+    
+    # Check if the table node exists before trying to parse it
+    if (!is.null(table_node) && !inherits(table_node, "xml_missing")) {
+      # Attempt to parse and process the table data with error handling
+      table_data <- tryCatch({
+        # Convert the table node to a data frame
+        df <- table_node %>% html_table(fill = TRUE)
+        
+        # Remove unwanted rows and select the second column only
+        selected_data <- df[-c(1, 5, 7, 12, 15, 17, 19:22), 2]
+        
+        # Transpose the selected column to make it a single row and convert it to a data frame
+        transposed_data <- as.data.frame(t(selected_data), stringsAsFactors = FALSE)
+        
+        # Assign column names based on predefined names
+        colnames(transposed_data) <- column_names
+        
+        # Add date and location as additional columns
+        transposed_data <- transposed_data %>%
+          mutate(date = date_str, location = location) %>%
+          select(location, date, everything())  # Ensure location and date are the first columns
+      }, error = function(e) {
+        message(paste("Error parsing table for location:", location, "Date:", date_str, "- skipping"))
+        return(NULL)  # Return NULL if an error occurs
+      })
+      
+      # Only store data if table_data is not NULL
+      if (!is.null(table_data)) {
+        weather_data[[paste(location, date_str, sep = "_")]] <- table_data
+      }
+    } else {
+      message(paste("Table not found for location:", location, "Date:", date_str))
+    }
+  }
+}
+
+# Close the RSelenium session
+remDr$close()
+rD$server$stop()
+
+# Combine all data into a single data frame
+weather_data_df <- bind_rows(weather_data)
+
+# Print or inspect the final data frame
+print(weather_data_df)
+run_final <- weather_data_df
+
+write.csv(run_final, "weather_final.csv")
+```
+
+```{r}
+table(run_final$location)
+locations <- list("tn/nashville/KBNA", "ny/newburgh/KSWF", "ak/anchorage/PANC", "il/chicago/KMDW", "co/denver/KDEN", "hi/honolulu/PHNL", "tx/houston/KIAH", "mi/romulus/KDTW", "id/boise/KBOI")
+```
+
+
+
+
+```{r}
+
+```
+
+
+
+
