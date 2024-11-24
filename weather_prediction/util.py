@@ -306,13 +306,37 @@ class WeatherForecast():
         datetime_today = pd.to_datetime(today)
         datetime_end = datetime_today + timedelta(days = 5)
         
-        locations = self.locations
+        ## Will need to change some of the codes...
+        ## Chicago is KMDW
+        ## NY is KSWF
+        
+        locations_dict = {
+            "Anchorage": "PANC",
+            "Boise": "KBOI",
+            "Chicago": "KORD",
+            "Denver": "KDEN",
+            "Detroit": "KDTW",
+            "Honolulu": "PHNL",
+            "Houston": "KIAH",
+            "Miami": "KMIA",
+            "Minneapolis": "KMSP",
+            "Oklahoma City": "KOKC",
+            "Nashville": "KBNA",
+            "New York": "KJFK",
+            "Phoenix": "KPHX",
+            "Portland ME": "KPWM",
+            "Portland OR": "KPDX",
+            "Salt Lake City": "KSLC",
+            "San Diego": "KSAN",
+            "San Francisco": "KSFO",
+            "Seattle": "KSEA",
+            "Washington DC": "KDCA"
+        }
         #order alphabetically
-        locations = sorted(locations)
+        locations = sorted(locations_dict.keys())
         #for location in locations:
         predictions = np.zeros((len(locations), 5, 3))
         for i, location in enumerate(locations):
-            predictions[i,:,:] = self.predict_location(datetime_end, location)
+            code = locations_dict[location]
+            predictions[i,:,:] = self.predict_location(datetime_end, code)
         predictions = np.round(predictions, 1)
-        print(f"{today}, {', '.join(str(ele) for ele in predictions.flatten())}")
-        return predictions

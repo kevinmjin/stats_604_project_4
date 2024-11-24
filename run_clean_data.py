@@ -70,5 +70,28 @@ min_refills = [36, # KSFO 2020-12-01
 for i in range(len(missing_min_rows)):
     mydf.loc[missing_min_rows[i], 'temp_min'] = min_refills[i]
     print(missing_min_location[i], missing_min_date[i],'refilled with temp_min= ', min_refills[i])
-
+locations_dict = {
+                "Anchorage": "PANC",
+                "Boise": "KBOI",
+                "Chicago": "KORD",
+                "Denver": "KDEN",
+                "Detroit": "KDTW",
+                "Honolulu": "PHNL",
+                "Houston": "KIAH",
+                "Miami": "KMIA",
+                "Minneapolis": "KMSP",
+                "Oklahoma City": "KOKC",
+                "Nashville": "KBNA",
+                "New York": "KJFK",
+                "Phoenix": "KPHX",
+                "Portland ME": "KPWM",
+                "Portland OR": "KPDX",
+                "Salt Lake City": "KSLC",
+                "San Diego": "KSAN",
+                "San Francisco": "KSFO",
+                "Seattle": "KSEA",
+                "Washington DC": "KDCA"
+            }
+## keep only the locations of locations_dict_values
+mydf = mydf[mydf['location'].isin(locations_dict.values())]
 mydf.to_csv('data/data_cleaned.csv')
