@@ -314,7 +314,7 @@ class WeatherForecast():
             "Anchorage": "PANC",
             "Boise": "KBOI",
             "Chicago": "KORD",
-            "Denver": "KDEN",
+            "Denver": "KCOS", ## Because KDEN is not in the data
             "Detroit": "KDTW",
             "Honolulu": "PHNL",
             "Houston": "KIAH",

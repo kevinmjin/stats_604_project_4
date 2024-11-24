@@ -74,7 +74,7 @@ locations_dict = {
                 "Anchorage": "PANC",
                 "Boise": "KBOI",
                 "Chicago": "KORD",
-                "Denver": "KDEN",
+                "Denver": "KCOS",
                 "Detroit": "KDTW",
                 "Honolulu": "PHNL",
                 "Houston": "KIAH",
