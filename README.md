@@ -2,7 +2,7 @@
 
 ## To-do
 ### Save the data/weather_final.csv to the online
-Completed
+Completed, check out the public repository: [link here](https://github.com/kevinmjin/winter_weather_data)
 
 ### Upload scraping code to Github
- 
+Completed 
