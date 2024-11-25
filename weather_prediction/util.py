@@ -340,3 +340,5 @@ class WeatherForecast():
             code = locations_dict[location]
             predictions[i,:,:] = self.predict_location(datetime_end, code)
         predictions = np.round(predictions, 1)
+        print(f"{today}, {', '.join(str(ele) for ele in predictions.flatten())}")
+        predictions = np.round(predictions, 1)

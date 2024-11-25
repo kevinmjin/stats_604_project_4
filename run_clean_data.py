@@ -63,9 +63,10 @@ min_refills = [36, # KSFO 2020-12-01
                0,# PANC 2022-11-28
                0, # PANC 2022-11-07
                33, # KBOI 2019-11-13
-               32 # KBOI 2021-12-02
+               32, # KBOI 2021-12-02
+               31, # KJFK 2019-12-02
+               52, # KJFK 2020-10-28
                ] 
-
 # Refill unreasonable values
 for i in range(len(missing_min_rows)):
     mydf.loc[missing_min_rows[i], 'temp_min'] = min_refills[i]
